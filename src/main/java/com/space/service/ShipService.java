@@ -117,11 +117,11 @@ public class ShipService {
         return shipSpecifications;
     }
 
-    public List<Ship> getAllShips (Map<String, String> restParams) {
+    public List<Ship> getAllShips (Map<String, String> requestParams) {
 
-        Pageable pageable = getPageable(restParams);
+        Pageable pageable = getPageable(requestParams);
 
-        Specification<Ship> shipSpecification = getShipSpecifications(restParams);
+        Specification<Ship> shipSpecification = getShipSpecifications(requestParams);
 
         Page<Ship> shipPage = shipRepository.findAll(shipSpecification, pageable);
 
