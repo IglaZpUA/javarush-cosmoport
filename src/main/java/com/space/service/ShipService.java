@@ -17,12 +17,9 @@ import java.util.*;
 
 @Service
 public class ShipService {
-    private static final String PAGE_NUMBER_NAME = "pageNumber";
-    private static final String PAGE_NUMBER_VALUE = "0";
-    private static final String PAGE_SIZE_NAME = "pageSize";
-    private static final String PAGE_SIZE_VALUE = "3";
-    private static final String ORDER_NAME = "order";
-    private static final String ORDER_VALUE = "ID";
+    private static final String PAGE_NUMBER_DEFAULT = "0";
+    private static final String PAGE_SIZE_DEFAULT = "3";
+    private static final String ORDER_DEFAULT = "ID";
 
     private static final int NAME_LEN_MAX = 50;
     private static final int PLANET_LEN_MAX = 50;
@@ -47,47 +44,84 @@ public class ShipService {
     private Pageable getPageable(Map<String, String> restParams) {
 
         int pageNumber = Integer.parseInt(Optional
-                .ofNullable(restParams.get(PAGE_NUMBER_NAME))
-                .orElse(PAGE_NUMBER_VALUE));
+                .ofNullable(restParams.get("pageNumber"))
+                .orElse(PAGE_NUMBER_DEFAULT));
 
         int pageSize = Integer.parseInt(Optional
-                .ofNullable(restParams.get(PAGE_SIZE_NAME))
-                .orElse(PAGE_SIZE_VALUE));
+                .ofNullable(restParams.get("pageSize"))
+                .orElse(PAGE_SIZE_DEFAULT));
 
         String order = Optional
-                .ofNullable(restParams.get(ORDER_NAME))
-                .orElse(ORDER_VALUE);
+                .ofNullable(restParams.get("order"))
+                .orElse(ORDER_DEFAULT);
 
         Sort sort = Sort.by(Sort.DEFAULT_DIRECTION, ShipOrder.valueOf(order).getFieldName());
 
         return PageRequest.of(pageNumber, pageSize, sort);
     }
 
-    private Specification<Ship> getShipSpecification(Map<String, String> requestParams) {
-        Specification<Ship> shipSpecification = Specification
-                .where(ShipSpecifications.nameLike(requestParams.get("name")))
-                .and(ShipSpecifications.planetLike(requestParams.get("planet")))
-                .and(ShipSpecifications.shipTypeEqual(requestParams.get("shipType")))
-                .and(ShipSpecifications.prodDateAfter(requestParams.get("after")))
-                .and(ShipSpecifications.prodDateBefore(requestParams.get("before")))
-                .and(ShipSpecifications.isUsed(requestParams.get("isUsed")))
-                .and(ShipSpecifications.speedGreaterOrEqual(requestParams.get("minSpeed")))
-                .and(ShipSpecifications.speedLessOrEqual(requestParams.get("maxSpeed")))
-                .and(ShipSpecifications.crewSizeGreaterOrEqual(requestParams.get("minCrewSize")))
-                .and(ShipSpecifications.crewSizeLessOrEqual(requestParams.get("maxCrewSize")))
-                .and(ShipSpecifications.raitingGreaterOrEqual(requestParams.get("minRating")))
-                .and(ShipSpecifications.raitingLessOrEqual(requestParams.get("maxRating")))
-                ;
+    private Specification<Ship> getShipSpecifications(Map<String, String> requestParams) {
 
-        return shipSpecification;
+        Specification<Ship> shipSpecifications = Specification.where(null);
+
+        for (Map.Entry<String, String> entry: requestParams.entrySet()) {
+
+            String name = entry.getKey();
+            String value = entry.getValue();
+            Specification<Ship> shipSpecification = null;
+
+            switch (name) {
+                case "name":
+                    shipSpecification = ShipSpecifications.nameLike(value);
+                    break;
+                case "planet":
+                    shipSpecification = ShipSpecifications.planetLike(value);
+                    break;
+                case "shipType":
+                    shipSpecification = ShipSpecifications.shipTypeEqual(value);
+                    break;
+                case "after":
+                    shipSpecification  = ShipSpecifications.prodDateAfter(value);
+                    break;
+                case "before":
+                    shipSpecification  = ShipSpecifications.prodDateBefore(value);
+                    break;
+                case "isUsed":
+                    shipSpecification = ShipSpecifications.isUsed(value);
+                    break;
+                case "minSpeed":
+                    shipSpecification = ShipSpecifications.speedGreaterOrEqual(value);
+                    break;
+                case "maxSpeed":
+                    shipSpecification = ShipSpecifications.speedLessOrEqual(value);
+                    break;
+                case "minCrewSize":
+                    shipSpecification = ShipSpecifications.crewSizeGreaterOrEqual(value);
+                    break;
+                case "maxCrewSize":
+                    shipSpecification = ShipSpecifications.crewSizeLessOrEqual(value);
+                    break;
+                case "minRating":
+                    shipSpecification = ShipSpecifications.raitingGreaterOrEqual(value);
+                    break;
+                case "maxRating":
+                    shipSpecification = ShipSpecifications.raitingLessOrEqual(value);
+                    break;
+                default: // order, pageNumber, pageSize
+            }
+
+            shipSpecifications = Specification.where(shipSpecifications).and(shipSpecification);
+
+        };
+
+        return shipSpecifications;
     }
 
     public List<Ship> getAllShips (Map<String, String> restParams) {
 
         Pageable pageable = getPageable(restParams);
 
-        Specification<Ship> shipSpecification = getShipSpecification(restParams);
-//        System.out.println("specification: " + shipSpecification);
+        Specification<Ship> shipSpecification = getShipSpecifications(restParams);
 
         Page<Ship> shipPage = shipRepository.findAll(shipSpecification, pageable);
 
@@ -95,7 +129,7 @@ public class ShipService {
     }
 
     public long countShips(Map<String, String> requestParams){
-        return shipRepository.count(getShipSpecification(requestParams));
+        return shipRepository.count(getShipSpecifications(requestParams));
     }
 
     public Ship saveShip(Ship ship) {
