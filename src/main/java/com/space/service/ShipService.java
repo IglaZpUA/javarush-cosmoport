@@ -41,18 +41,18 @@ public class ShipService {
     @Autowired
     ShipRepository shipRepository;
 
-    private Pageable getPageable(Map<String, String> restParams) {
+    private Pageable getPageable(Map<String, String> requestParams) {
 
         int pageNumber = Integer.parseInt(Optional
-                .ofNullable(restParams.get("pageNumber"))
+                .ofNullable(requestParams.get("pageNumber"))
                 .orElse(PAGE_NUMBER_DEFAULT));
 
         int pageSize = Integer.parseInt(Optional
-                .ofNullable(restParams.get("pageSize"))
+                .ofNullable(requestParams.get("pageSize"))
                 .orElse(PAGE_SIZE_DEFAULT));
 
         String order = Optional
-                .ofNullable(restParams.get("order"))
+                .ofNullable(requestParams.get("order"))
                 .orElse(ORDER_DEFAULT);
 
         Sort sort = Sort.by(Sort.DEFAULT_DIRECTION, ShipOrder.valueOf(order).getFieldName());
